@@ -1,3 +1,9 @@
+/**
+ * @file nfc_operations.c
+ * @brief NFC scanner and poller callbacks for tag read/write
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #include "nfc_operations.h"
 
 // Track which sector to read (0 or 1) - managed by scene handler

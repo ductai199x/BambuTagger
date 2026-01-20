@@ -1,3 +1,9 @@
+/**
+ * @file tag_storage.c
+ * @brief Tag file save/load operations for SD card storage
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #include "tag_storage.h"
 
 bool ensure_storage_dir(Storage* storage) {

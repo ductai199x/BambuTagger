@@ -1,3 +1,9 @@
+/**
+ * @file scenes.h
+ * @brief Scene handler declarations for Bambu Tagger
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #pragma once
 
 #include "bambu_tagger.h"

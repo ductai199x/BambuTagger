@@ -1,3 +1,9 @@
+/**
+ * @file tag_storage.h
+ * @brief Tag file save/load function declarations
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #pragma once
 
 #include "bambu_tagger.h"

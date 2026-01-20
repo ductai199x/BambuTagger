@@ -1,3 +1,9 @@
+/**
+ * @file nfc_operations.h
+ * @brief NFC scanner and poller callback declarations
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #pragma once
 
 #include "bambu_tagger.h"

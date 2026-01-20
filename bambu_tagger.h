@@ -1,3 +1,9 @@
+/**
+ * @file bambu_tagger.h
+ * @brief Shared types and structures for Bambu Tagger app
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #pragma once
 
 #include <furi.h>

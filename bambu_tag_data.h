@@ -1,3 +1,9 @@
+/**
+ * @file bambu_tag_data.h
+ * @brief Filament definitions and tag block data helpers
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #pragma once
 #include <stdint.h>
 #include <stddef.h>

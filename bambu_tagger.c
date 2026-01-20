@@ -1,3 +1,9 @@
+/**
+ * @file bambu_tagger.c
+ * @brief Main entry point and app lifecycle for Bambu Tagger
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #include "bambu_tagger.h"
 #include "scenes.h"
 

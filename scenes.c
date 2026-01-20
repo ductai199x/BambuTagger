@@ -1,3 +1,9 @@
+/**
+ * @file scenes.c
+ * @brief UI scene handlers for Bambu Tagger
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #include "scenes.h"
 #include "nfc_operations.h"
 #include "tag_storage.h"

@@ -1,3 +1,9 @@
+/**
+ * @file bambu_crypto.h
+ * @brief Bambu Lab RFID key derivation declarations
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #pragma once
 #include <stdint.h>
 #include <stddef.h>

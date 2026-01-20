@@ -1,3 +1,9 @@
+/**
+ * @file bambu_crypto.c
+ * @brief Bambu Lab RFID key derivation algorithm
+ * @author Tai Nguyen <taiducnguyen.drexel@gmail.com>
+ */
+
 #include "bambu_crypto.h"
 #include <mbedtls/md.h>
 #include <string.h>
