@@ -112,7 +112,7 @@ Saved tags are stored in `/ext/apps_data/bambu_tagger/` with the `.btag` extensi
 
 ## Acknowledgments
 
-- Key derivation algorithm based on research from the Bambu Lab RFID community
+- Key derivation algorithm based on [SpoolEase](https://github.com/yanshay/SpoolEase) by yanshay
 - Built with the [Flipper Zero](https://flipperzero.one/) SDK
 
 ## License
