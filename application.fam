@@ -1,0 +1,24 @@
+# For details & more options, see documentation/AppManifests.md in firmware repo
+
+App(
+    appid="bambu_tagger",
+    name="Bambu Tagger",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="bambu_tagger_app",
+    requires=["gui", "nfc"],
+    stack_size=4 * 1024,  # Increased for scene manager
+    fap_category="NFC",
+    fap_libs=["mbedtls"],
+    sources=[
+        "bambu_tagger.c",
+        "bambu_crypto.c",
+        "scenes.c",
+        "nfc_operations.c",
+        "tag_storage.c",
+    ],
+    fap_version="1.0",
+    fap_icon="bambu_tagger.png",  # 10x10 1-bit PNG
+    fap_description="Program Bambu Lab RFID filament tags",
+    fap_author="Tai",
+    fap_icon_assets="images",
+)
