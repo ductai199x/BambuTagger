@@ -1,5 +1,7 @@
 # Bambu Tagger
 
+![Build Status](https://github.com/ductai199x/BambuTagger/actions/workflows/build.yml/badge.svg)
+
 A Flipper Zero application for reading and programming Bambu Lab filament RFID tags.
 
 ## Features
