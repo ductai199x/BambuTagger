@@ -8,8 +8,9 @@
 
 #include "bambu_tagger.h"
 
-// Global variable for multi-pass read tracking
+// Global variables for multi-pass read/write tracking
 extern uint8_t g_current_read_sector;
+extern uint8_t g_current_write_sector;
 
 // NFC scanner callback
 void scanner_callback(NfcScannerEvent event, void* context);

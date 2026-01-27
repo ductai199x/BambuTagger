@@ -340,10 +340,13 @@ void scene_confirm_on_exit(void* context) {
 void scene_scan_tag_on_enter(void* context) {
     App* app = context;
 
+    // Reset all state
     app->card_detected = false;
     app->uid_read = false;
     app->detection_in_progress = false;
     app->detected_tag_type = TagTypeUnknown;
+    app->scanner = NULL;
+    app->poller = NULL;
 
     widget_reset(app->widget);
     widget_add_text_scroll_element(
@@ -360,12 +363,14 @@ bool scene_scan_tag_on_event(void* context, SceneManagerEvent event) {
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeTick) {
-        // Check if card detected
-        if(app->card_detected && !app->uid_read) {
+        // Check if card detected and we haven't started UID read yet
+        if(app->card_detected && !app->uid_read && app->poller == NULL) {
             // Stop scanner and start UID read
-            nfc_scanner_stop(app->scanner);
-            nfc_scanner_free(app->scanner);
-            app->scanner = NULL;
+            if(app->scanner) {
+                nfc_scanner_stop(app->scanner);
+                nfc_scanner_free(app->scanner);
+                app->scanner = NULL;
+            }
 
             widget_reset(app->widget);
             widget_add_text_scroll_element(app->widget, 0, 0, 128, 64, "Reading UID...");
@@ -465,6 +470,20 @@ bool scene_scan_tag_on_event(void* context, SceneManagerEvent event) {
 void scene_scan_tag_on_exit(void* context) {
     App* app = context;
     widget_reset(app->widget);
+
+    // Clean up scanner if still running
+    if(app->scanner) {
+        nfc_scanner_stop(app->scanner);
+        nfc_scanner_free(app->scanner);
+        app->scanner = NULL;
+    }
+
+    // Clean up poller if still running
+    if(app->poller) {
+        nfc_poller_stop(app->poller);
+        nfc_poller_free(app->poller);
+        app->poller = NULL;
+    }
 }
 
 // ============================================
@@ -473,15 +492,18 @@ void scene_scan_tag_on_exit(void* context) {
 void scene_write_tag_on_enter(void* context) {
     App* app = context;
 
+    // Reset state
     app->write_success = false;
     app->write_in_progress = true;
+    app->poller = NULL;
+    g_current_write_sector = 0;  // Start with sector 0
 
     widget_reset(app->widget);
     widget_add_text_scroll_element(
-        app->widget, 0, 0, 128, 64, "Writing tag...\n\nKeep tag on\nFlipper's back");
+        app->widget, 0, 0, 128, 64, "Writing sector 0...\n\nKeep tag on\nFlipper's back");
     view_dispatcher_switch_to_view(app->view_dispatcher, ViewWidget);
 
-    // Start Mifare Classic poller for writing
+    // Start Mifare Classic poller for writing sector 0
     app->poller = nfc_poller_alloc(app->nfc, NfcProtocolMfClassic);
     nfc_poller_start(app->poller, write_poller_callback, app);
 }
@@ -491,16 +513,34 @@ bool scene_write_tag_on_event(void* context, SceneManagerEvent event) {
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeTick) {
-        if(!app->write_in_progress) {
-            // Write completed
-            if(app->poller) {
-                nfc_poller_stop(app->poller);
-                nfc_poller_free(app->poller);
-                app->poller = NULL;
-            }
+        // Handle poller completion
+        if(!app->write_in_progress && app->poller != NULL) {
+            nfc_poller_stop(app->poller);
+            nfc_poller_free(app->poller);
+            app->poller = NULL;
+            FURI_LOG_I(TAG, "Write poller stopped, sector %d done", g_current_write_sector);
+        }
 
-            scene_manager_next_scene(app->scene_manager, SceneResult);
-            consumed = true;
+        // Check if we need another pass
+        if(!app->write_in_progress && app->poller == NULL) {
+            if(g_current_write_sector == 0) {
+                // Sector 0 done, now do sector 1
+                g_current_write_sector = 1;
+                widget_reset(app->widget);
+                widget_add_text_scroll_element(
+                    app->widget, 0, 0, 128, 64, "Writing sector 1...\n\nKeep tag on\nFlipper's back");
+
+                FURI_LOG_I(TAG, "Starting sector 1 write pass");
+                app->write_in_progress = true;
+                app->poller = nfc_poller_alloc(app->nfc, NfcProtocolMfClassic);
+                nfc_poller_start(app->poller, write_poller_callback, app);
+            } else {
+                // Both sectors written
+                app->write_success = true;
+                FURI_LOG_I(TAG, "Both sectors written successfully!");
+                scene_manager_next_scene(app->scene_manager, SceneResult);
+                consumed = true;
+            }
         }
     } else if(event.type == SceneManagerEventTypeBack) {
         // Don't allow back during write
@@ -574,10 +614,13 @@ void scene_result_on_exit(void* context) {
 void scene_read_tag_scan_on_enter(void* context) {
     App* app = context;
 
+    // Reset all state
     app->card_detected = false;
     app->uid_read = false;
     app->read_success = false;
     app->read_in_progress = false;
+    app->scanner = NULL;
+    app->poller = NULL;
     memset(&app->read_data, 0, sizeof(ReadTagData));  // Clear all read data for multi-pass
     g_current_read_sector = 0;  // Start with sector 0
 
