@@ -17,6 +17,10 @@ void scene_select_filament_on_enter(void* context);
 bool scene_select_filament_on_event(void* context, SceneManagerEvent event);
 void scene_select_filament_on_exit(void* context);
 
+void scene_select_manufacturer_on_enter(void* context);
+bool scene_select_manufacturer_on_event(void* context, SceneManagerEvent event);
+void scene_select_manufacturer_on_exit(void* context);
+
 void scene_select_color_on_enter(void* context);
 bool scene_select_color_on_event(void* context, SceneManagerEvent event);
 void scene_select_color_on_exit(void* context);

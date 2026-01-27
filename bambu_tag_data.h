@@ -17,7 +17,7 @@
 // Block 3: Sector 0 trailer
 // Block 4: Detailed filament type (e.g., "PLA Basic")
 // Block 5: Color RGBA (0-3) + Weight (4-5) + Reserved
-// Block 6: Additional data
+// Block 6: Manufacturer name (e.g., "Bambu Lab", "eSUN")
 // Block 7: Sector 1 trailer
 
 // ============================================
@@ -166,13 +166,56 @@ static const uint16_t WEIGHT_PRESETS[] = {
 #define WEIGHT_PRESET_COUNT (sizeof(WEIGHT_PRESETS) / sizeof(WEIGHT_PRESETS[0]))
 
 // ============================================
+// Manufacturer Presets
+// ============================================
+typedef struct {
+    const char* name;  // Display name, max 16 chars to fit in block 6
+} ManufacturerPreset;
+
+static const ManufacturerPreset MANUFACTURER_PRESETS[] = {
+    // Sorted by popularity/market presence
+    {"Generic"},
+    {"Bambu Lab"},
+    {"Sunlu"},
+    {"eSUN"},
+    {"Overture"},
+    {"Creality"},
+    {"Polymaker"},
+    {"Elegoo"},
+    {"Prusament"},
+    {"YOUSU"},
+    {"Anycubic"},
+    {"Amazon Basics"},
+    {"Hatchbox"},
+    {"Inland"},
+    {"Eryone"},
+    {"Flashforge"},
+    {"MatterHackers"},
+    {"ColorFabb"},
+    {"Fillamentum"},
+    {"TTYT3D"},
+    {"COMGROW"},
+    {"Protopasta"},
+    {"Atomic Filament"},
+    {"3DXTech"},
+    {"Fiberlogy"},
+    {"FormFutura"},
+    {"ZIRO"},
+    {"Geeetech"},
+    {"Duramic"},
+};
+
+#define MANUFACTURER_PRESET_COUNT (sizeof(MANUFACTURER_PRESETS) / sizeof(MANUFACTURER_PRESETS[0]))
+
+// ============================================
 // Tag Data Structure (for programming)
 // ============================================
 typedef struct {
     // User selections
-    uint8_t filament_index;  // Index into BAMBU_FILAMENTS
-    uint8_t color_index;     // Index into COLOR_PRESETS
-    uint16_t weight_grams;   // Spool weight in grams
+    uint8_t filament_index;      // Index into BAMBU_FILAMENTS
+    uint8_t manufacturer_index;  // Index into MANUFACTURER_PRESETS
+    uint8_t color_index;         // Index into COLOR_PRESETS
+    uint16_t weight_grams;       // Spool weight in grams
 
     // Derived from UID after scanning
     uint8_t uid[10];
@@ -225,4 +268,12 @@ static inline void prepare_block5(uint8_t* block, const ColorPreset* color, uint
     // Weight in grams (bytes 4-5, little endian)
     block[4] = (uint8_t)(weight_grams & 0xFF);
     block[5] = (uint8_t)((weight_grams >> 8) & 0xFF);
+}
+
+// Prepare Block 6 data: manufacturer name
+static inline void prepare_block6(uint8_t* block, const ManufacturerPreset* manufacturer) {
+    memset(block, 0, 16);
+    size_t len = strlen(manufacturer->name);
+    if(len > 16) len = 16;
+    memcpy(block, manufacturer->name, len);
 }

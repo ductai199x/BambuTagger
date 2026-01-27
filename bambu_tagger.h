@@ -38,6 +38,7 @@
 typedef enum {
     SceneMainMenu,
     SceneSelectFilament,
+    SceneSelectManufacturer,
     SceneSelectColor,
     SceneSelectWeight,
     SceneConfirm,
@@ -69,6 +70,7 @@ typedef enum {
     EventMainMenuRead,
     EventMainMenuSaved,
     EventFilamentSelected,
+    EventManufacturerSelected,
     EventColorSelected,
     EventWeightSelected,
     EventConfirmed,
@@ -101,6 +103,7 @@ typedef struct {
     uint8_t block2[16];   // Filament type
     uint8_t block4[16];   // Detailed type
     uint8_t block5[16];   // Color RGBA + Weight
+    uint8_t block6[16];   // Manufacturer name
     bool valid;
 } ReadTagData;
 

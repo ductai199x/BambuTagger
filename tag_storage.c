@@ -75,6 +75,12 @@ bool save_tag_to_file(App* app) {
         }
         furi_string_cat(data, "\n");
 
+        furi_string_cat(data, "Block_6:");
+        for(int i = 0; i < 16; i++) {
+            furi_string_cat_printf(data, " %02X", app->read_data.block6[i]);
+        }
+        furi_string_cat(data, "\n");
+
         if(storage_file_write(file, furi_string_get_cstr(data), furi_string_size(data)) ==
            furi_string_size(data)) {
             success = true;
@@ -169,6 +175,21 @@ bool load_tag_from_file(App* app, const char* path) {
                            &b[0], &b[1], &b[2], &b[3], &b[4], &b[5], &b[6], &b[7],
                            &b[8], &b[9], &b[10], &b[11], &b[12], &b[13], &b[14], &b[15]) == 16) {
                         for(int i = 0; i < 16; i++) app->read_data.block5[i] = b[i];
+                    }
+                }
+
+                // Block 6 (manufacturer) - optional for backward compatibility
+                // Initialize to zeros first (will display as "Generic" if not present)
+                memset(app->read_data.block6, 0, 16);
+                char* block6_line = strstr(buffer, "Block_6:");
+                if(block6_line) {
+                    unsigned int b[16];
+                    if(sscanf(
+                           block6_line,
+                           "Block_6: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+                           &b[0], &b[1], &b[2], &b[3], &b[4], &b[5], &b[6], &b[7],
+                           &b[8], &b[9], &b[10], &b[11], &b[12], &b[13], &b[14], &b[15]) == 16) {
+                        for(int i = 0; i < 16; i++) app->read_data.block6[i] = b[i];
                     }
                 }
 

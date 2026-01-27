@@ -239,6 +239,22 @@ NfcCommand write_poller_callback(NfcGenericEvent event, void* context) {
                 }
                 FURI_LOG_I(TAG, "Block 5 write OK");
 
+                // Write block 6 (manufacturer)
+                if(app->use_saved_tag) {
+                    memcpy(block_data.data, app->read_data.block6, 16);
+                } else {
+                    const ManufacturerPreset* manufacturer = &MANUFACTURER_PRESETS[app->tag_data.manufacturer_index];
+                    prepare_block6(block_data.data, manufacturer);
+                }
+                FURI_LOG_I(TAG, "Writing block 6...");
+                err = mf_classic_poller_write_block(poller, 6, &block_data);
+                if(err != MfClassicErrorNone) {
+                    FURI_LOG_E(TAG, "Block 6 write failed: %d", err);
+                    app->write_in_progress = false;
+                    return NfcCommandStop;
+                }
+                FURI_LOG_I(TAG, "Block 6 write OK");
+
                 // Write sector 1 trailer (block 7) with Bambu-derived keys
                 memset(block_data.data, 0, 16);
                 memcpy(block_data.data, app->derived_keys.keys[1], 6);  // Key A
@@ -324,7 +340,7 @@ NfcCommand read_poller_callback(NfcGenericEvent event, void* context) {
                             block_data.data[2], block_data.data[3]);
                     }
                 } else {
-                    // Read blocks 4 and 5
+                    // Read blocks 4, 5, and 6
                     if(mf_classic_poller_read_block(poller, 4, &block_data) == MfClassicErrorNone) {
                         memcpy(app->read_data.block4, block_data.data, 16);
                         FURI_LOG_I(TAG, "Block 4: %02X %02X %02X %02X...",
@@ -336,6 +352,17 @@ NfcCommand read_poller_callback(NfcGenericEvent event, void* context) {
                         FURI_LOG_I(TAG, "Block 5: %02X %02X %02X %02X...",
                             block_data.data[0], block_data.data[1],
                             block_data.data[2], block_data.data[3]);
+                    }
+                    // Read block 6 (manufacturer) - gracefully handle failure
+                    // block6 is already zeroed by memset in scene on_enter
+                    if(mf_classic_poller_read_block(poller, 6, &block_data) == MfClassicErrorNone) {
+                        memcpy(app->read_data.block6, block_data.data, 16);
+                        FURI_LOG_I(TAG, "Block 6: %02X %02X %02X %02X...",
+                            block_data.data[0], block_data.data[1],
+                            block_data.data[2], block_data.data[3]);
+                    } else {
+                        // Block 6 read failed - continue with zeroed data (shows "Generic")
+                        FURI_LOG_I(TAG, "Block 6 read failed - defaulting to Generic");
                     }
                 }
             } else {

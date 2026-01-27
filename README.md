@@ -6,9 +6,10 @@ A Flipper Zero application for reading and programming Bambu Lab filament RFID t
 
 ## Features
 
-- **Read Tag** - Read filament data from Bambu Lab spool tags (material type, color, weight)
-- **Program Tag** - Create new filament tags on blank MIFARE Classic 1K cards
+- **Read Tag** - Read filament data from Bambu Lab spool tags (material type, color, weight, manufacturer)
+- **Program Tag** - Create new filament tags on blank MIFARE Classic 1K cards with custom manufacturer branding
 - **Save/Load Tags** - Save read tags to SD card and clone them to new tags
+- **Manufacturer Support** - Tag third-party filaments with their brand (eSUN, Overture, Polymaker, etc.)
 - **Bambu Tag Detection** - Automatically detects original Bambu tags (which cannot be reprogrammed due to read-only access bits)
 
 ## Requirements
@@ -38,21 +39,28 @@ The app includes presets for common Bambu Lab filament types:
 | PET-CF | Standard |
 | Support | Support W, Support G, Support PLA, PVA |
 
+## Supported Manufacturers
+
+The app supports tagging filaments from these brands:
+
+Generic, Bambu Lab, Sunlu, eSUN, Overture, Creality, Polymaker, Elegoo, Prusament, YOUSU, Anycubic, Amazon Basics, Hatchbox, Inland, Eryone, Flashforge, MatterHackers, ColorFabb, Fillamentum, TTYT3D, COMGROW, Protopasta, Atomic Filament, 3DXTech, Fiberlogy, FormFutura, ZIRO, Geeetech, Duramic
+
 ## Usage
 
 ### Reading a Tag
 1. Select **Read Tag** from the main menu
 2. Place the Bambu spool tag on the back of your Flipper
-3. View the tag data (material ID, type, color, weight)
+3. View the tag data (material ID, type, color, weight, manufacturer)
 4. Optionally save the tag data to SD card
 
 ### Programming a New Tag
 1. Select **Program Tag** from the main menu
 2. Choose filament type from the list
-3. Select color preset
-4. Set spool weight (250g - 3000g)
-5. Confirm settings and place a **blank** MIFARE Classic 1K tag on Flipper
-6. Wait for programming to complete
+3. Select manufacturer/brand (Generic, Bambu Lab, eSUN, etc.)
+4. Select color preset
+5. Set spool weight (250g - 3000g)
+6. Confirm settings and place a **blank** MIFARE Classic 1K tag on Flipper
+7. Wait for programming to complete
 
 ### Cloning a Saved Tag
 1. Select **Saved Tags** from the main menu
@@ -99,13 +107,13 @@ Bambu Lab tags use MIFARE Classic 1K with the following block layout:
 
 | Block | Content |
 |-------|---------|
-| 0 | UID, BCC, manufacturer data (read-only) |
+| 0 | UID, BCC, tag manufacturer data (read-only) |
 | 1 | Material variant + Material ID |
 | 2 | Filament type string (e.g., "PLA") |
 | 3 | Sector 0 trailer (keys + access bits) |
 | 4 | Detailed filament type (e.g., "PLA Basic") |
 | 5 | Color RGBA + Weight (little-endian) |
-| 6 | Additional data |
+| 6 | Filament manufacturer/brand (e.g., "eSUN") |
 | 7 | Sector 1 trailer (keys + access bits) |
 
 Saved tags are stored in `/ext/apps_data/bambu_tagger/` with the `.btag` extension.

@@ -16,6 +16,7 @@ const SceneManagerHandlers scene_handlers = {
         (void (*const[])(void*)){
             scene_main_menu_on_enter,
             scene_select_filament_on_enter,
+            scene_select_manufacturer_on_enter,
             scene_select_color_on_enter,
             scene_select_weight_on_enter,
             scene_confirm_on_enter,
@@ -31,6 +32,7 @@ const SceneManagerHandlers scene_handlers = {
         (bool (*const[])(void*, SceneManagerEvent)){
             scene_main_menu_on_event,
             scene_select_filament_on_event,
+            scene_select_manufacturer_on_event,
             scene_select_color_on_event,
             scene_select_weight_on_event,
             scene_confirm_on_event,
@@ -46,6 +48,7 @@ const SceneManagerHandlers scene_handlers = {
         (void (*const[])(void*)){
             scene_main_menu_on_exit,
             scene_select_filament_on_exit,
+            scene_select_manufacturer_on_exit,
             scene_select_color_on_exit,
             scene_select_weight_on_exit,
             scene_confirm_on_exit,
@@ -105,6 +108,7 @@ bool scene_main_menu_on_event(void* context, SceneManagerEvent event) {
         } else if(event.event == EventMainMenuProgram) {
             // Initialize defaults
             app->tag_data.filament_index = 0;
+            app->tag_data.manufacturer_index = 0;
             app->tag_data.color_index = 0;
             app->tag_data.weight_grams = 1000;
             app->use_saved_tag = false;
@@ -153,7 +157,7 @@ bool scene_select_filament_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == EventFilamentSelected) {
-            scene_manager_next_scene(app->scene_manager, SceneSelectColor);
+            scene_manager_next_scene(app->scene_manager, SceneSelectManufacturer);
             consumed = true;
         }
     }
@@ -161,6 +165,47 @@ bool scene_select_filament_on_event(void* context, SceneManagerEvent event) {
 }
 
 void scene_select_filament_on_exit(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+}
+
+// ============================================
+// Scene: Select Manufacturer
+// ============================================
+static void manufacturer_menu_callback(void* context, uint32_t index) {
+    App* app = context;
+    app->tag_data.manufacturer_index = index;
+    view_dispatcher_send_custom_event(app->view_dispatcher, EventManufacturerSelected);
+}
+
+void scene_select_manufacturer_on_enter(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, "Select Manufacturer");
+
+    for(size_t i = 0; i < MANUFACTURER_PRESET_COUNT; i++) {
+        submenu_add_item(
+            app->submenu, MANUFACTURER_PRESETS[i].name, i, manufacturer_menu_callback, app);
+    }
+
+    submenu_set_selected_item(app->submenu, app->tag_data.manufacturer_index);
+    view_dispatcher_switch_to_view(app->view_dispatcher, ViewSubmenu);
+}
+
+bool scene_select_manufacturer_on_event(void* context, SceneManagerEvent event) {
+    App* app = context;
+    bool consumed = false;
+
+    if(event.type == SceneManagerEventTypeCustom) {
+        if(event.event == EventManufacturerSelected) {
+            scene_manager_next_scene(app->scene_manager, SceneSelectColor);
+            consumed = true;
+        }
+    }
+    return consumed;
+}
+
+void scene_select_manufacturer_on_exit(void* context) {
     App* app = context;
     submenu_reset(app->submenu);
 }
@@ -285,16 +330,19 @@ void scene_confirm_on_enter(void* context) {
     widget_reset(app->widget);
 
     const FilamentInfo* filament = &BAMBU_FILAMENTS[app->tag_data.filament_index];
+    const ManufacturerPreset* manufacturer = &MANUFACTURER_PRESETS[app->tag_data.manufacturer_index];
     const ColorPreset* color = &COLOR_PRESETS[app->tag_data.color_index];
 
     FuriString* text = furi_string_alloc();
     furi_string_printf(
         text,
         "Filament: %s\n"
+        "Manufacturer: %s\n"
         "Type: %s\n"
         "Color: %s\n"
         "Weight: %d g",
         filament->display_name,
+        manufacturer->name,
         filament->filament_type,
         color->name,
         app->tag_data.weight_grams);
@@ -795,6 +843,22 @@ void scene_read_tag_result_on_enter(void* context) {
         char detailed_type[17];
         extract_string(app->read_data.block4, 0, 16, detailed_type);
 
+        // Extract manufacturer from block 6 (validate against known list)
+        char manufacturer[17];
+        extract_string(app->read_data.block6, 0, 16, manufacturer);
+
+        // Validate manufacturer against predefined list
+        bool valid_manufacturer = false;
+        for(size_t i = 0; i < MANUFACTURER_PRESET_COUNT; i++) {
+            if(strcmp(manufacturer, MANUFACTURER_PRESETS[i].name) == 0) {
+                valid_manufacturer = true;
+                break;
+            }
+        }
+        if(!valid_manufacturer) {
+            strcpy(manufacturer, "Generic");
+        }
+
         // Extract color from block 5 (bytes 0-3: RGBA)
         uint8_t r = app->read_data.block5[0];
         uint8_t g = app->read_data.block5[1];
@@ -820,12 +884,14 @@ void scene_read_tag_result_on_enter(void* context) {
             "ID: %s\n"
             "Type: %s\n"
             "Detail: %s\n"
+            "Manufacturer: %s\n"
             "Color: #%02X%02X%02X\n"
             "Weight: %d g",
             uid_str,
             material_id[0] ? material_id : "(empty)",
             filament_type[0] ? filament_type : "(empty)",
             detailed_type[0] ? detailed_type : "(empty)",
+            manufacturer,
             r, g, b,
             weight);
 
@@ -983,6 +1049,20 @@ void scene_saved_tag_view_on_enter(void* context) {
         extract_string(app->read_data.block2, 0, 16, filament_type);
         char detailed_type[17];
         extract_string(app->read_data.block4, 0, 16, detailed_type);
+        char manufacturer[17];
+        extract_string(app->read_data.block6, 0, 16, manufacturer);
+
+        // Validate manufacturer against predefined list
+        bool valid_manufacturer = false;
+        for(size_t i = 0; i < MANUFACTURER_PRESET_COUNT; i++) {
+            if(strcmp(manufacturer, MANUFACTURER_PRESETS[i].name) == 0) {
+                valid_manufacturer = true;
+                break;
+            }
+        }
+        if(!valid_manufacturer) {
+            strcpy(manufacturer, "Generic");
+        }
         uint8_t r = app->read_data.block5[0];
         uint8_t g = app->read_data.block5[1];
         uint8_t b = app->read_data.block5[2];
@@ -1003,11 +1083,13 @@ void scene_saved_tag_view_on_enter(void* context) {
             "UID: %s\n"
             "Type: %s\n"
             "Detail: %s\n"
+            "Manufacturer: %s\n"
             "Color: #%02X%02X%02X\n"
             "Weight: %d g",
             uid_str,
             filament_type[0] ? filament_type : "(empty)",
             detailed_type[0] ? detailed_type : "(empty)",
+            manufacturer,
             r, g, b,
             weight);
     } else {
